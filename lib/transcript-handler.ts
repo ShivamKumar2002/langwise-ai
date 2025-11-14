@@ -1,9 +1,19 @@
 import { createTranscript } from './utils-db';
 
+/**
+ * DEPRECATED: This module is no longer actively used.
+ * Transcript collection now uses the Agora History API (see app/api/agora/stop-agent/route.ts)
+ * 
+ * The History API is more reliable because:
+ * - Webhooks are not officially supported for Conversational AI Engine
+ * - History API captures complete conversations while agent is still running
+ * - Backend controls the process end-to-end
+ */
+
 export interface AgoraTranscriptMessage {
   type: 'text' | 'audio';
   content: string;
-  speaker: 'agent' | 'user'; // From the audio source
+  speaker: 'agent' | 'user';
   timestamp: number;
 }
 
@@ -19,14 +29,12 @@ export interface AgoraWebhookPayload {
 
 // Process incoming webhook from Agora with transcript data
 export function processAgoraWebhook(payload: AgoraWebhookPayload): string {
-  console.log('[v0] Processing Agora webhook:', payload.eventType);
+  console.log('[v0] Processing Agora webhook (DEPRECATED):', payload.eventType);
 
-  // Extract transcript from webhook payload
   if (payload.transcript) {
     return payload.transcript;
   }
 
-  // Alternative: Build transcript from message events
   if (payload.messages && Array.isArray(payload.messages)) {
     return payload.messages
       .map((msg) => {
@@ -36,7 +44,6 @@ export function processAgoraWebhook(payload: AgoraWebhookPayload): string {
       .join('\n');
   }
 
-  // Fallback: Empty transcript if no data available
   return '';
 }
 
@@ -46,7 +53,6 @@ export function storeTranscriptData(
   agentId: string,
   transcript: string
 ): string {
-  // Create transcript record in database
   const transcriptId = createTranscript(userId, transcript, agentId);
   console.log('[v0] Stored transcript:', transcriptId);
   return transcriptId;
@@ -54,7 +60,5 @@ export function storeTranscriptData(
 
 // Retrieve transcript by session for analysis
 export function getSessionTranscript(sessionId: string): string | null {
-  // This would query the database for transcript associated with session
-  // For now, we'll store it during the webhook processing
   return null;
 }

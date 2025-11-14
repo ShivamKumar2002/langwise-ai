@@ -122,30 +122,32 @@ export async function configureAgentWebhook(
   agentId: string,
   webhookUrl: string
 ): Promise<void> {
-  const url = `https://api.agora.io/api/conversational-ai-agent/v2/projects/${AGORA_CONFIG.appId}/agents/${agentId}/webhook`;
+  console.warn('[v0] configureAgentWebhook is deprecated - using History API instead');
+  // No-op function for backwards compatibility
+}
+
+export async function getAgentHistory(agentId: string): Promise<Array<{ role: 'user' | 'assistant'; content: string }>> {
+  const url = `https://api.agora.io/api/conversational-ai-agent/v2/projects/${AGORA_CONFIG.appId}/agents/${agentId}/history`;
   const authHeader = generateAgoraAuthHeader();
 
-  const requestBody = {
-    webhook_url: webhookUrl,
-    event_types: ['agent_text_message', 'agent_disconnect'],
-  };
-
-  console.log('[v0] Configuring webhook for agent:', agentId);
+  console.log('[v0] Fetching agent history for agent:', agentId);
 
   const response = await fetch(url, {
-    method: 'POST',
+    method: 'GET',
     headers: {
       'Authorization': authHeader,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {
     const error = await response.text();
-    console.error('[v0] Webhook configuration error:', error);
-    throw new Error(`Failed to configure webhook: ${error}`);
+    console.error('[v0] Failed to retrieve history:', error);
+    throw new Error(`Failed to retrieve agent history: ${error}`);
   }
 
-  console.log('[v0] Webhook configured successfully for agent:', agentId);
+  const data = await response.json();
+  console.log('[v0] Retrieved history with', data.contents?.length || 0, 'messages');
+  
+  return data.contents || [];
 }

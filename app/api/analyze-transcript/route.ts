@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = getUserByUserId(userId);
+    const user = await getUserByUserId(userId);
     if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
@@ -24,10 +24,10 @@ export async function POST(request: NextRequest) {
     console.log('[v0] Analyzing transcript for user:', userId);
 
     // Save transcript
-    createTranscript(userId, transcript, agentId);
+    await createTranscript(userId, transcript, agentId);
 
     // Get previous plan for context
-    const previousPlan = getPlanByUserId(userId);
+    const previousPlan = await getPlanByUserId(userId);
 
     // Analyze with Gemini
     const plan = await analyzeTranscriptWithGemini(
@@ -40,10 +40,10 @@ export async function POST(request: NextRequest) {
 
     // Set userId and save plan
     plan.userId = userId;
-    savePlan(plan);
+    await savePlan(plan);
 
     // Complete session
-    completeAssessmentSession(sessionId, transcript);
+    await completeAssessmentSession(sessionId, transcript);
 
     console.log('[v0] Transcript analysis complete for user:', userId);
 

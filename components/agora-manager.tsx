@@ -8,6 +8,7 @@ import { useAgoraClient } from '@/lib/agora-hook';
 interface AgoraManagerProps {
   userId: string;
   appId: string;
+  sessionId: string; // New prop for sessionId
   onAgentReady?: (agentId: string) => void;
   onAgentError?: (error: string) => void;
   onTranscript?: (transcript: string) => void;
@@ -17,6 +18,7 @@ interface AgoraManagerProps {
 export function AgoraManager({
   userId,
   appId,
+  sessionId,
   onAgentReady,
   onAgentError,
   onTranscript,
@@ -77,7 +79,7 @@ export function AgoraManager({
     };
 
     initializeAgent();
-  }, [userId, appId, channelName, onAgentReady, onAgentError]);
+  }, [userId, appId, channelName, sessionId, onAgentReady, onAgentError]);
 
   const stopAgent = async () => {
     if (agentIdRef.current) {
@@ -85,7 +87,10 @@ export function AgoraManager({
         await fetch('/api/agora/stop-agent', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ agentId: agentIdRef.current }),
+          body: JSON.stringify({ 
+            agentId: agentIdRef.current,
+            sessionId: sessionId // Send session ID to capture transcript with history
+          }),
         });
 
         console.log('[v0] Agent stopped:', agentIdRef.current);

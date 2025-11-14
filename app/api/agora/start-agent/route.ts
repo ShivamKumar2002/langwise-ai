@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { startAgoraAgent, generateTutorSystemPrompt, configureAgentWebhook } from '@/lib/agora-utils';
+import { startAgoraAgent, generateTutorSystemPrompt } from '@/lib/agora-utils';
 import { getUserByUserId } from '@/lib/utils-db';
 import { createAssessmentSession } from '@/lib/utils-db';
 
@@ -38,19 +38,6 @@ export async function POST(request: NextRequest) {
       user.nativeLanguage,
       user.targetLanguage
     );
-
-    const webhookUrl = process.env.NEXT_PUBLIC_APP_URL
-      ? `${process.env.NEXT_PUBLIC_APP_URL}/api/agora/webhook`
-      : undefined;
-
-    if (webhookUrl) {
-      try {
-        await configureAgentWebhook(agentId, webhookUrl);
-      } catch (webhookError) {
-        console.warn('[v0] Failed to configure webhook, agent will still work:', webhookError);
-        // Continue anyway - webhook is optional
-      }
-    }
 
     // Create assessment session
     const session = await createAssessmentSession(userId, agentId);
