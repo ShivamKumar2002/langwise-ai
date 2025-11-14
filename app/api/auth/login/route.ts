@@ -1,50 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { TEST_ACCOUNTS } from '@/lib/constants';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getUserByUserId, getPlanByUserId } from "@/lib/utils-db";
-import crypto from "crypto";
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, authCode } = await request.json();
+    const { email, password } = await request.json();
 
-    if (!userId || !authCode) {
+    if (!email || !password) {
       return NextResponse.json(
-        { error: "Missing userId or authCode" },
+        { error: "Missing email or password" },
         { status: 400 }
       );
     }
 
-    // Verify credentials
-    const account = TEST_ACCOUNTS.find(
-      (acc) => acc.userId === userId && acc.authCode === authCode
-    );
+    const supabase = await createSupabaseServerClient();
+    
+    // Sign in with Supabase
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-    if (!account) {
-      console.log("[v0] Invalid credentials for user:", userId);
+    if (error) {
+      console.log("[v0] Login failed:", error.message);
       return NextResponse.json(
-        { error: "Invalid credentials" },
+        { error: error.message },
         { status: 401 }
       );
     }
 
-    // Get or create user
-    let user = getUserByUserId(userId);
+    if (!data.user || !data.session) {
+      return NextResponse.json(
+        { error: "Authentication failed" },
+        { status: 401 }
+      );
+    }
+
+    // Get user profile
+    const userId = data.user.email || data.user.id;
+    const user = await getUserByUserId(userId);
 
     if (!user) {
-      console.log(
-        "[v0] User not found in database, but credentials valid. Creating..."
-      );
+      console.log("[v0] User profile not found for:", userId);
       return NextResponse.json(
         { error: "User profile not found" },
         { status: 404 }
       );
     }
 
-    const hasLearningPlan = !!getPlanByUserId(userId);
-
-    // Create session token
-    const token = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const hasLearningPlan = !!await getPlanByUserId(userId);
 
     console.log(
       "[v0] Successful login for user:",
@@ -63,8 +67,7 @@ export async function POST(request: NextRequest) {
         targetLanguage: user.targetLanguage,
         hasLearningPlan,
       },
-      token,
-      expiresAt,
+      session: data.session,
     });
   } catch (error) {
     console.error("[v0] Login error:", error);

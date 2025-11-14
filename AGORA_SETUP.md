@@ -62,8 +62,9 @@ There are two ways to receive transcripts:
 
 ## Testing
 
-1. **With test credentials:**
-   - Use any of the 3 hardcoded test accounts (test_user_1, test_user_2, test_user_3)
+1. **Create a test account:**
+   - Sign up with email and password on the login page
+   - Complete the onboarding flow
    - Start an assessment to test the flow
 
 2. **Verify token generation:**

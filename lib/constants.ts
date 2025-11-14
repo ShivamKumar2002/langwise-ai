@@ -1,10 +1,3 @@
-// Test user accounts
-export const TEST_ACCOUNTS = [
-  { userId: "test_user_1", authCode: "secret123", name: "Alice Chen" },
-  { userId: "test_user_2", authCode: "secret456", name: "Bob Martinez" },
-  { userId: "test_user_3", authCode: "secret789", name: "Carol Singh" },
-];
-
 // Agora configuration
 export const AGORA_CONFIG = {
   appId: process.env.AGORA_APP_ID || "",
@@ -60,10 +53,10 @@ export function validateAgoraConfig(): { valid: boolean; errors: string[] } {
 }
 
 // Call this during app initialization
-if (typeof window === 'undefined') {
+if (typeof window === "undefined") {
   // Server-side only
   const validation = validateAgoraConfig();
   if (!validation.valid) {
-    console.warn('[v0] Configuration warnings:', validation.errors);
+    console.warn("[v0] Configuration warnings:", validation.errors);
   }
 }

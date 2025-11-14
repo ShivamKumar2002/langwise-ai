@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     console.log("[v0] Stopping agent:", agentId);
 
-    const session = getAssessmentSession(sessionId);
+    const session = await getAssessmentSession(sessionId);
     if (!session) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     await stopAgoraAgent(agentId);
 
     // Step 3: Complete assessment session with transcript
-    completeAssessmentSession(sessionId, transcript);
+    await completeAssessmentSession(sessionId, transcript);
 
     sessionStopLocks.set(sessionId, "stopped");
 

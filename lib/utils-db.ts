@@ -1,149 +1,362 @@
-import { getDatabase } from './db';
-import { randomUUID } from 'crypto';
-import type { User, PersonalizedPlan, SkillLevel, Transcript, AssessmentSession } from './types';
+import { createSupabaseServerClient } from "./supabase/server";
+import type {
+  User,
+  PersonalizedPlan,
+  SkillLevel,
+  Transcript,
+  AssessmentSession,
+} from "./types";
 
 // User operations
-export function createUser(user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): User {
-  const db = getDatabase();
-  const id = randomUUID();
+export async function createUser(
+  user: Omit<User, "id" | "createdAt" | "updatedAt">,
+  authUserId?: string
+): Promise<User> {
+  const supabase = await createSupabaseServerClient();
   const now = new Date().toISOString();
 
-  const stmt = db.prepare(`
-    INSERT INTO users (id, userId, name, nativeLanguage, targetLanguage, goal, bio, createdAt, updatedAt)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
+  const insertData: any = {
+    user_id: user.userId,
+    name: user.name,
+    native_language: user.nativeLanguage,
+    target_language: user.targetLanguage,
+    goal: user.goal,
+    bio: user.bio,
+    created_at: now,
+    updated_at: now,
+  };
 
-  stmt.run(id, user.userId, user.name, user.nativeLanguage, user.targetLanguage, user.goal, user.bio, now, now);
+  // If authUserId is provided, use it as the id (must match auth.users.id)
+  if (authUserId) {
+    insertData.id = authUserId;
+  }
 
-  return { ...user, id, createdAt: now, updatedAt: now };
+  const { data, error } = await supabase
+    .from("users")
+    .insert(insertData)
+    .select()
+    .single();
+
+  if (error) {
+    // Check if table doesn't exist (migration not run)
+    if (
+      error.message?.includes("Could not find the table") ||
+      error.message?.includes("relation") ||
+      error.code === "42P01"
+    ) {
+      throw new Error(
+        `Database table not found. Please run the Supabase migration from supabase/migrations/001_initial_schema.sql in your Supabase dashboard. Error: ${error.message}`
+      );
+    }
+    throw new Error(`Failed to create user: ${error.message}`);
+  }
+
+  return {
+    id: data.id,
+    userId: data.user_id,
+    name: data.name,
+    nativeLanguage: data.native_language,
+    targetLanguage: data.target_language,
+    goal: data.goal,
+    bio: data.bio,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
 }
 
-export function getUserByUserId(userId: string): User | null {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM users WHERE userId = ?');
-  return stmt.get(userId) as User | undefined || null;
+export async function getUserByUserId(userId: string): Promise<User | null> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      return null; // Not found
+    }
+    // Check if table doesn't exist (migration not run)
+    if (
+      error.message?.includes("Could not find the table") ||
+      error.message?.includes("relation") ||
+      error.code === "42P01"
+    ) {
+      throw new Error(
+        `Database table not found. Please run the Supabase migration from supabase/migrations/001_initial_schema.sql in your Supabase dashboard. Error: ${error.message}`
+      );
+    }
+    throw new Error(`Failed to get user: ${error.message}`);
+  }
+
+  return {
+    id: data.id,
+    userId: data.user_id,
+    name: data.name,
+    nativeLanguage: data.native_language,
+    targetLanguage: data.target_language,
+    goal: data.goal,
+    bio: data.bio,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
 }
 
-export function updateUser(userId: string, updates: Partial<User>): User | null {
-  const db = getDatabase();
-  const user = getUserByUserId(userId);
+export async function getUserById(id: string): Promise<User | null> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      return null; // Not found
+    }
+    throw new Error(`Failed to get user: ${error.message}`);
+  }
+
+  return {
+    id: data.id,
+    userId: data.user_id,
+    name: data.name,
+    nativeLanguage: data.native_language,
+    targetLanguage: data.target_language,
+    goal: data.goal,
+    bio: data.bio,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
+}
+
+export async function updateUser(
+  userId: string,
+  updates: Partial<User>
+): Promise<User | null> {
+  const supabase = await createSupabaseServerClient();
+  const user = await getUserByUserId(userId);
   if (!user) return null;
 
-  const now = new Date().toISOString();
-  const stmt = db.prepare(`
-    UPDATE users 
-    SET ${Object.keys(updates).map(k => `${k} = ?`).join(', ')}, updatedAt = ?
-    WHERE userId = ?
-  `);
+  const updateData: any = {};
+  if (updates.name !== undefined) updateData.name = updates.name;
+  if (updates.nativeLanguage !== undefined)
+    updateData.native_language = updates.nativeLanguage;
+  if (updates.targetLanguage !== undefined)
+    updateData.target_language = updates.targetLanguage;
+  if (updates.goal !== undefined) updateData.goal = updates.goal;
+  if (updates.bio !== undefined) updateData.bio = updates.bio;
 
-  stmt.run(...Object.values(updates), now, userId);
-  return { ...user, ...updates, updatedAt: now };
+  const { data, error } = await supabase
+    .from("users")
+    .update(updateData)
+    .eq("user_id", userId)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to update user: ${error.message}`);
+  }
+
+  return {
+    id: data.id,
+    userId: data.user_id,
+    name: data.name,
+    nativeLanguage: data.native_language,
+    targetLanguage: data.target_language,
+    goal: data.goal,
+    bio: data.bio,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
 }
 
 // Transcript operations
-export function createTranscript(userId: string, content: string, agentId: string): Transcript {
-  const db = getDatabase();
-  const id = randomUUID();
+export async function createTranscript(
+  userId: string,
+  content: string,
+  agentId: string
+): Promise<Transcript> {
+  const supabase = await createSupabaseServerClient();
   const createdAt = new Date().toISOString();
 
-  const stmt = db.prepare(`
-    INSERT INTO transcripts (id, userId, content, agentId, createdAt)
-    VALUES (?, ?, ?, ?, ?)
-  `);
+  const { data, error } = await supabase
+    .from("transcripts")
+    .insert({
+      user_id: userId,
+      content,
+      agent_id: agentId,
+      created_at: createdAt,
+    })
+    .select()
+    .single();
 
-  stmt.run(id, userId, content, agentId, createdAt);
+  if (error) {
+    throw new Error(`Failed to create transcript: ${error.message}`);
+  }
 
-  return { id, userId, content, agentId, createdAt };
+  return {
+    id: data.id,
+    userId: data.user_id,
+    content: data.content,
+    agentId: data.agent_id,
+    createdAt: data.created_at,
+  };
 }
 
 // Personalized plan operations
-export function savePlan(plan: PersonalizedPlan): void {
-  const db = getDatabase();
-  const id = randomUUID();
+export async function savePlan(plan: PersonalizedPlan): Promise<void> {
+  const supabase = await createSupabaseServerClient();
 
-  const stmt = db.prepare(`
-    INSERT INTO personalized_plans 
-    (id, userId, skills, currentLevel, nextLevel, learningUnits, coachingTips, weakAreas, strengths, generatedAt)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
+  const { error } = await supabase.from("personalized_plans").insert({
+    user_id: plan.userId,
+    skills: plan.skills,
+    current_level: plan.currentLevel,
+    next_level: plan.nextLevel,
+    learning_units: plan.learningUnits,
+    coaching_tips: plan.coachingTips,
+    weak_areas: plan.weakAreas,
+    strengths: plan.strengths,
+    generated_at: plan.generatedAt,
+  });
 
-  stmt.run(
-    id,
-    plan.userId,
-    JSON.stringify(plan.skills),
-    plan.currentLevel,
-    plan.nextLevel,
-    JSON.stringify(plan.learningUnits),
-    JSON.stringify(plan.coachingTips),
-    JSON.stringify(plan.weakAreas),
-    JSON.stringify(plan.strengths),
-    plan.generatedAt
-  );
+  if (error) {
+    throw new Error(`Failed to save plan: ${error.message}`);
+  }
 }
 
-export function getPlanByUserId(userId: string): PersonalizedPlan | null {
-  const db = getDatabase();
-  const stmt = db.prepare(`
-    SELECT * FROM personalized_plans 
-    WHERE userId = ? 
-    ORDER BY generatedAt DESC 
-    LIMIT 1
-  `);
+export async function getPlanByUserId(
+  userId: string
+): Promise<PersonalizedPlan | null> {
+  const supabase = await createSupabaseServerClient();
 
-  const row = stmt.get(userId) as any;
-  if (!row) return null;
+  const { data, error } = await supabase
+    .from("personalized_plans")
+    .select("*")
+    .eq("user_id", userId)
+    .order("generated_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      return null; // Not found
+    }
+    throw new Error(`Failed to get plan: ${error.message}`);
+  }
 
   return {
-    userId: row.userId,
-    skills: JSON.parse(row.skills),
-    currentLevel: row.currentLevel,
-    nextLevel: row.nextLevel,
-    learningUnits: JSON.parse(row.learningUnits),
-    coachingTips: JSON.parse(row.coachingTips),
-    weakAreas: JSON.parse(row.weakAreas),
-    strengths: JSON.parse(row.strengths),
-    generatedAt: row.generatedAt,
+    userId: data.user_id,
+    skills: data.skills,
+    currentLevel: data.current_level,
+    nextLevel: data.next_level,
+    learningUnits: data.learning_units,
+    coachingTips: data.coaching_tips,
+    weakAreas: data.weak_areas,
+    strengths: data.strengths,
+    generatedAt: data.generated_at,
   };
 }
 
 // Assessment session operations
-export function createAssessmentSession(userId: string, agentId: string): AssessmentSession {
-  const db = getDatabase();
-  const id = randomUUID();
+export async function createAssessmentSession(
+  userId: string,
+  agentId: string
+): Promise<AssessmentSession> {
+  const supabase = await createSupabaseServerClient();
   const startedAt = new Date().toISOString();
 
-  const stmt = db.prepare(`
-    INSERT INTO assessment_sessions (id, userId, agentId, startedAt, status)
-    VALUES (?, ?, ?, ?, ?)
-  `);
+  const { data, error } = await supabase
+    .from("assessment_sessions")
+    .insert({
+      user_id: userId,
+      agent_id: agentId,
+      started_at: startedAt,
+      status: "active",
+    })
+    .select()
+    .single();
 
-  stmt.run(id, userId, agentId, startedAt, 'active');
+  if (error) {
+    throw new Error(`Failed to create assessment session: ${error.message}`);
+  }
 
-  return { id, userId, agentId, transcript: '', startedAt, status: 'active' };
+  return {
+    id: data.id,
+    userId: data.user_id,
+    agentId: data.agent_id,
+    transcript: data.transcript || "",
+    startedAt: data.started_at,
+    endedAt: data.ended_at || undefined,
+    status: data.status as "active" | "completed",
+  };
 }
 
-export function getAssessmentSession(sessionId: string): AssessmentSession | null {
-  const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM assessment_sessions WHERE id = ?');
-  return stmt.get(sessionId) as AssessmentSession | undefined || null;
+export async function getAssessmentSession(
+  sessionId: string
+): Promise<AssessmentSession | null> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("assessment_sessions")
+    .select("*")
+    .eq("id", sessionId)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      return null; // Not found
+    }
+    throw new Error(`Failed to get assessment session: ${error.message}`);
+  }
+
+  return {
+    id: data.id,
+    userId: data.user_id,
+    agentId: data.agent_id,
+    transcript: data.transcript || "",
+    startedAt: data.started_at,
+    endedAt: data.ended_at || undefined,
+    status: data.status as "active" | "completed",
+  };
 }
 
-export function completeAssessmentSession(sessionId: string, transcript: string): AssessmentSession | null {
-  const db = getDatabase();
-  const session = getAssessmentSession(sessionId);
+export async function completeAssessmentSession(
+  sessionId: string,
+  transcript: string
+): Promise<AssessmentSession | null> {
+  const supabase = await createSupabaseServerClient();
+  const session = await getAssessmentSession(sessionId);
   if (!session) return null;
 
   // Also persist the transcript as a standalone record tied to this session's user and agent
-  createTranscript(session.userId, transcript, session.agentId);
+  await createTranscript(session.userId, transcript, session.agentId);
 
   const endedAt = new Date().toISOString();
-  const stmt = db.prepare(`
-    UPDATE assessment_sessions 
-    SET transcript = ?, endedAt = ?, status = ?
-    WHERE id = ?
-  `);
+  const { data, error } = await supabase
+    .from("assessment_sessions")
+    .update({
+      transcript,
+      ended_at: endedAt,
+      status: "completed",
+    })
+    .eq("id", sessionId)
+    .select()
+    .single();
 
-  stmt.run(transcript, endedAt, "completed", sessionId);
+  if (error) {
+    throw new Error(`Failed to complete assessment session: ${error.message}`);
+  }
 
-  return { ...session, transcript, endedAt, status: "completed" };
+  return {
+    id: data.id,
+    userId: data.user_id,
+    agentId: data.agent_id,
+    transcript: data.transcript || "",
+    startedAt: data.started_at,
+    endedAt: data.ended_at || undefined,
+    status: data.status as "active" | "completed",
+  };
 }

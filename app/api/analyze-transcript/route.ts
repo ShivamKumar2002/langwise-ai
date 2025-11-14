@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const session = getAssessmentSession(sessionId);
+    const session = await getAssessmentSession(sessionId);
     if (!session) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
