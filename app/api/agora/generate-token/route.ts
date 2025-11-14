@@ -16,11 +16,13 @@ export async function POST(request: NextRequest) {
     const appCertificate = process.env.AGORA_APP_CERTIFICATE;
     const uidValue = uid || 0;
     const expirationTimeInSeconds = 24 * 60 * 60; // 24 hours
+    const currentTimestamp = Math.floor(Date.now() / 1000);
+    const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
 
     if (!appId || !appCertificate) {
-      console.error('[v0] Missing Agora credentials for token generation');
+      console.error("[v0] Missing Agora credentials for token generation");
       return NextResponse.json(
-        { error: 'Agora credentials not configured' },
+        { error: "Agora credentials not configured" },
         { status: 500 }
       );
     }
@@ -32,7 +34,7 @@ export async function POST(request: NextRequest) {
       channel,
       uidValue,
       RtcRole.PUBLISHER,
-      expirationTimeInSeconds
+      privilegeExpiredTs
     );
 
     console.log('[v0] Generated real Agora RTC token for channel:', channel, 'uid:', uidValue);

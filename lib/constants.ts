@@ -12,17 +12,14 @@ export const AGORA_CONFIG = {
   customerSecret: process.env.AGORA_CUSTOMER_SECRET || "",
 };
 
-// Gemini configuration
-export const GEMINI_CONFIG = {
-  apiKey: process.env.GEMINI_API_KEY || "",
-  model: "gemini-2.5-pro",
+export const OPENAI_REALTIME_CONFIG = {
+  url: process.env.OPENAI_REALTIME_URL || "wss://api.openai.com/v1/realtime",
+  apiKey: process.env.OPENAI_REALTIME_API_KEY || "",
+  model: process.env.OPENAI_REALTIME_MODEL || "gpt-realtime",
+  voice: process.env.OPENAI_REALTIME_VOICE || "coral",
 };
 
-// OpenAI Realtime for Agora MLLM
-export const OPENAI_CONFIG = {
-  apiKey: process.env.OPENAI_API_KEY || "",
-  model: "gpt-4o-realtime-preview",
-};
+export const ANALYSIS_MODEL = process.env.ANALYSIS_MODEL || "openai/gpt-5-mini";
 
 // Language settings
 export const LANGUAGE_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
@@ -44,19 +41,16 @@ export function validateAgoraConfig(): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
   if (!AGORA_CONFIG.appId) {
-    errors.push('AGORA_APP_ID is not configured');
+    errors.push("AGORA_APP_ID is not configured");
   }
   if (!AGORA_CONFIG.customerId) {
-    errors.push('AGORA_CUSTOMER_ID is not configured');
+    errors.push("AGORA_CUSTOMER_ID is not configured");
   }
   if (!AGORA_CONFIG.customerSecret) {
-    errors.push('AGORA_CUSTOMER_SECRET is not configured');
+    errors.push("AGORA_CUSTOMER_SECRET is not configured");
   }
   if (!process.env.AGORA_APP_CERTIFICATE) {
-    errors.push('AGORA_APP_CERTIFICATE is not configured');
-  }
-  if (!GEMINI_CONFIG.apiKey) {
-    errors.push('GEMINI_API_KEY is not configured');
+    errors.push("AGORA_APP_CERTIFICATE is not configured");
   }
 
   return {

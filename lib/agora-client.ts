@@ -1,92 +1,88 @@
-import AgoraRTC, { IAgoraRTCClient, ILocalAudioTrack } from 'agora-rtc-sdk-ng';
+import type { IAgoraRTCClient, ILocalAudioTrack } from "agora-rtc-sdk-ng";
+import { getAgoraToken } from "./agora-token-generator";
 
-let agoraClient: IAgoraRTCClient | null = null;
-let localAudioTrack: ILocalAudioTrack | null = null;
+type AgoraRTCType = typeof import("agora-rtc-sdk-ng") extends {
+  default: infer T;
+}
+  ? T
+  : never;
 
-export async function initializeAgoraClient(appId: string) {
-  if (agoraClient) return agoraClient;
+let cachedAgoraRTC: AgoraRTCType | null = null;
 
-  AgoraRTC.setLogLevel(1); // Info level
-  agoraClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'opus' });
+async function ensureAgoraRTC(): Promise<AgoraRTCType> {
+  if (cachedAgoraRTC) {
+    return cachedAgoraRTC;
+  }
 
-  console.log('[v0] Agora client initialized');
-  return agoraClient;
+  if (typeof window === "undefined") {
+    throw new Error("AgoraRTC can only be initialized in the browser");
+  }
+
+  const { default: AgoraRTC } = await import("agora-rtc-sdk-ng");
+  cachedAgoraRTC = AgoraRTC;
+  return AgoraRTC;
 }
 
-export async function joinAgoraChannel(
+export interface AgoraConnection {
+  client: IAgoraRTCClient;
+  localAudioTrack: ILocalAudioTrack;
+  channel: string;
+}
+
+export async function createAgoraConnection(
   appId: string,
   channel: string,
-  token: string,
   uid?: number
-) {
-  try {
-    const client = await initializeAgoraClient(appId);
+): Promise<AgoraConnection> {
+  const AgoraRTC = await ensureAgoraRTC();
+  AgoraRTC.setLogLevel(1); // Info level
+  const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
 
-    console.log('[v0] Joining Agora channel:', channel);
+  // Use a non-zero, unique RTC UID for the local user to avoid collisions with the agent
+  // The agent uses UID 0 (configured in the Agora Conversational AI agent setup),
+  // so we ensure the frontend client always joins with a different UID.
+  const rtcUid =
+    typeof uid === "number" && uid > 0
+      ? uid
+      : Math.floor(Math.random() * 4294967295) + 1;
+  const token = await getAgoraToken(channel, rtcUid);
 
-    await client.join(appId, channel, token, uid || 0);
+  console.log("[v0] Joining Agora channel:", channel);
 
-    // Get local audio track
-    localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack({
-      encoderConfig: {
-        sampleRate: 48000,
-        stereo: true,
-        bitrate: 128,
-      },
-    });
+  await client.join(appId, channel, token ?? null, rtcUid);
 
-    await client.publish([localAudioTrack]);
+  const localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack({
+    encoderConfig: {
+      sampleRate: 48000,
+      stereo: true,
+      bitrate: 128,
+    },
+  });
 
-    console.log('[v0] Successfully joined channel and published audio');
+  await client.publish([localAudioTrack]);
 
-    return { client, localAudioTrack };
-  } catch (error) {
-    console.error('[v0] Failed to join Agora channel:', error);
-    throw error;
-  }
+  console.log("[v0] Successfully joined channel and published audio");
+
+  return { client, localAudioTrack, channel };
 }
 
-export async function leaveAgoraChannel() {
+export async function teardownAgoraConnection(
+  connection?: AgoraConnection | null
+) {
+  if (!connection) return;
+
+  const { client, localAudioTrack, channel } = connection;
+
   try {
     if (localAudioTrack) {
       localAudioTrack.stop();
       localAudioTrack.close();
-      localAudioTrack = null;
     }
 
-    if (agoraClient) {
-      await agoraClient.leave();
-      agoraClient = null;
-    }
-
-    console.log('[v0] Left Agora channel');
+    await client.leave();
+    console.log("[v0] Left Agora channel:", channel);
   } catch (error) {
-    console.error('[v0] Error leaving channel:', error);
+    console.error("[v0] Error leaving channel:", error);
     throw error;
-  }
-}
-
-export function getAgoraClient() {
-  return agoraClient;
-}
-
-export function getLocalAudioTrack() {
-  return localAudioTrack;
-}
-
-// Event listeners
-export function onRemoteUserJoined(
-  callback: (user: any) => void
-) {
-  if (agoraClient) {
-    agoraClient.on('user-joined', callback);
-  }
-}
-
-export function onRemoteUserLeft(
-  callback: (user: any) => void
-) {
-  if (agoraClient) {
-    agoraClient.on('user-left', callback);
   }
 }

@@ -133,6 +133,9 @@ export function completeAssessmentSession(sessionId: string, transcript: string)
   const session = getAssessmentSession(sessionId);
   if (!session) return null;
 
+  // Also persist the transcript as a standalone record tied to this session's user and agent
+  createTranscript(session.userId, transcript, session.agentId);
+
   const endedAt = new Date().toISOString();
   const stmt = db.prepare(`
     UPDATE assessment_sessions 
@@ -140,7 +143,7 @@ export function completeAssessmentSession(sessionId: string, transcript: string)
     WHERE id = ?
   `);
 
-  stmt.run(transcript, endedAt, 'completed', sessionId);
+  stmt.run(transcript, endedAt, "completed", sessionId);
 
-  return { ...session, transcript, endedAt, status: 'completed' };
+  return { ...session, transcript, endedAt, status: "completed" };
 }

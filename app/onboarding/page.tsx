@@ -42,6 +42,15 @@ function OnboardingContent() {
     }
   }, [isHydrated, user]);
 
+  useEffect(() => {
+    if (isHydrated && user?.hasLearningPlan) {
+      console.log(
+        "[v0] User already has a learning plan, redirecting to dashboard"
+      );
+      router.replace("/dashboard");
+    }
+  }, [isHydrated, user, router]);
+
   if (!isHydrated) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -50,41 +59,41 @@ function OnboardingContent() {
     );
   }
 
-  if (!user) {
+  if (!user || user.hasLearningPlan) {
     return null;
   }
 
   const handleNext = () => {
     if (step === 1 && !formData.nativeLanguage) {
-      setError('Please select your native language');
+      setError("Please select your native language");
       return;
     }
     if (step === 2 && !formData.targetLanguage) {
-      setError('Please select your target language');
+      setError("Please select your target language");
       return;
     }
     if (step === 3 && !formData.goal) {
-      setError('Please describe your learning goal');
+      setError("Please describe your learning goal");
       return;
     }
-    
-    setError('');
+
+    setError("");
     setStep(step + 1);
   };
 
   const handleBack = () => {
-    setError('');
+    setError("");
     setStep(step - 1);
   };
 
   const handleSubmit = async () => {
     if (!formData.bio) {
-      setError('Please tell us about yourself');
+      setError("Please tell us about yourself");
       return;
     }
 
     setIsLoading(true);
-    setError('');
+    setError("");
 
     try {
       await saveOnboarding(user.userId, {
@@ -94,22 +103,25 @@ function OnboardingContent() {
         bio: formData.bio,
       });
 
-      console.log('[v0] Onboarding complete, redirecting to dashboard');
-      router.push('/dashboard');
+      console.log("[v0] Onboarding complete, redirecting to dashboard");
+      router.push("/dashboard");
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to save onboarding';
+      const message =
+        err instanceof Error ? err.message : "Failed to save onboarding";
       setError(message);
-      console.error('[v0] Onboarding error:', message);
+      console.error("[v0] Onboarding error:", message);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 p-4">
       <div className="max-w-2xl mx-auto py-12">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome, {user.name}!</h1>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">
+            Welcome, {user.name}!
+          </h1>
           <p className="text-slate-600">Let's set up your learning profile</p>
         </div>
 
@@ -122,10 +134,10 @@ function OnboardingContent() {
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
                       s === step
-                        ? 'bg-blue-600 text-white'
+                        ? "bg-blue-600 text-white"
                         : s < step
-                        ? 'bg-green-500 text-white'
-                        : 'bg-slate-200 text-slate-600'
+                        ? "bg-green-500 text-white"
+                        : "bg-slate-200 text-slate-600"
                     }`}
                   >
                     {s}
@@ -133,7 +145,7 @@ function OnboardingContent() {
                   {s < 4 && (
                     <div
                       className={`h-1 w-12 mx-1 ${
-                        s < step ? 'bg-green-500' : 'bg-slate-200'
+                        s < step ? "bg-green-500" : "bg-slate-200"
                       }`}
                     />
                   )}
@@ -150,24 +162,29 @@ function OnboardingContent() {
                   What's your native language?
                 </h2>
                 <div className="space-y-3">
-                  {['English', 'Spanish', 'Mandarin', 'French', 'German', 'Japanese'].map(
-                    (lang) => (
-                      <button
-                        key={lang}
-                        onClick={() => {
-                          setFormData({ ...formData, nativeLanguage: lang });
-                          setError('');
-                        }}
-                        className={`w-full p-4 text-left border-2 rounded-lg font-medium transition ${
-                          formData.nativeLanguage === lang
-                            ? 'border-blue-600 bg-blue-50 text-blue-900'
-                            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                        }`}
-                      >
-                        {lang}
-                      </button>
-                    )
-                  )}
+                  {[
+                    "English",
+                    "Spanish",
+                    "Mandarin",
+                    "French",
+                    "German",
+                    "Japanese",
+                  ].map((lang) => (
+                    <button
+                      key={lang}
+                      onClick={() => {
+                        setFormData({ ...formData, nativeLanguage: lang });
+                        setError("");
+                      }}
+                      className={`w-full p-4 text-left border-2 rounded-lg font-medium transition ${
+                        formData.nativeLanguage === lang
+                          ? "border-blue-600 bg-blue-50 text-blue-900"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                      }`}
+                    >
+                      {lang}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
@@ -181,24 +198,29 @@ function OnboardingContent() {
                   What language do you want to learn?
                 </h2>
                 <div className="space-y-3">
-                  {['Spanish', 'French', 'German', 'Mandarin', 'Japanese', 'Portuguese'].map(
-                    (lang) => (
-                      <button
-                        key={lang}
-                        onClick={() => {
-                          setFormData({ ...formData, targetLanguage: lang });
-                          setError('');
-                        }}
-                        className={`w-full p-4 text-left border-2 rounded-lg font-medium transition ${
-                          formData.targetLanguage === lang
-                            ? 'border-blue-600 bg-blue-50 text-blue-900'
-                            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                        }`}
-                      >
-                        {lang}
-                      </button>
-                    )
-                  )}
+                  {[
+                    "Spanish",
+                    "French",
+                    "German",
+                    "Mandarin",
+                    "Japanese",
+                    "Portuguese",
+                  ].map((lang) => (
+                    <button
+                      key={lang}
+                      onClick={() => {
+                        setFormData({ ...formData, targetLanguage: lang });
+                        setError("");
+                      }}
+                      className={`w-full p-4 text-left border-2 rounded-lg font-medium transition ${
+                        formData.targetLanguage === lang
+                          ? "border-blue-600 bg-blue-50 text-blue-900"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                      }`}
+                    >
+                      {lang}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
@@ -215,7 +237,7 @@ function OnboardingContent() {
                   value={formData.goal}
                   onChange={(e) => {
                     setFormData({ ...formData, goal: e.target.value });
-                    setError('');
+                    setError("");
                   }}
                   placeholder="e.g., Achieve conversational fluency for travel and business"
                   className="w-full p-4 border-2 border-slate-200 rounded-lg focus:border-blue-600 focus:outline-none resize-none"
@@ -236,7 +258,7 @@ function OnboardingContent() {
                   value={formData.bio}
                   onChange={(e) => {
                     setFormData({ ...formData, bio: e.target.value });
-                    setError('');
+                    setError("");
                   }}
                   placeholder="Share your background, profession, or interests..."
                   className="w-full p-4 border-2 border-slate-200 rounded-lg focus:border-blue-600 focus:outline-none resize-none"
@@ -282,7 +304,7 @@ function OnboardingContent() {
                     Completing...
                   </div>
                 ) : (
-                  'Complete Setup'
+                  "Complete Setup"
                 )}
               </Button>
             )}

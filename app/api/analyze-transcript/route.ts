@@ -1,36 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { analyzeTranscriptWithGemini } from '@/lib/gemini-utils';
-import { getUserByUserId, createTranscript, getPlanByUserId, savePlan, completeAssessmentSession } from '@/lib/utils-db';
+import { analyzeTranscriptWithAI } from "@/lib/analysis-utils";
+import {
+  getUserByUserId,
+  getPlanByUserId,
+  savePlan,
+  getAssessmentSession,
+} from "@/lib/utils-db";
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, transcript, agentId, sessionId } = await request.json();
+    const { userId, agentId, sessionId } = await request.json();
 
-    if (!userId || !transcript || !agentId || !sessionId) {
+    if (!userId || !agentId || !sessionId) {
       return NextResponse.json(
-        { error: 'Missing required parameters' },
+        { error: "Missing required parameters" },
         { status: 400 }
       );
     }
 
-    const user = await getUserByUserId(userId);
-    if (!user) {
+    const session = getAssessmentSession(sessionId);
+    if (!session) {
+      return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    }
+
+    if (session.userId !== userId) {
       return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
+        { error: "Session does not belong to user" },
+        { status: 403 }
       );
     }
 
-    console.log('[v0] Analyzing transcript for user:', userId);
+    if (!session.transcript) {
+      return NextResponse.json(
+        { error: "Transcript not available yet. Please try again." },
+        { status: 409 }
+      );
+    }
 
-    // Save transcript
-    await createTranscript(userId, transcript, agentId);
+    const transcript = session.transcript;
+
+    const user = await getUserByUserId(userId);
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    console.log("[v0] Analyzing transcript for user:", userId);
 
     // Get previous plan for context
     const previousPlan = await getPlanByUserId(userId);
 
-    // Analyze with Gemini
-    const plan = await analyzeTranscriptWithGemini(
+    // Analyze
+    const plan = await analyzeTranscriptWithAI(
       transcript,
       user.nativeLanguage,
       user.targetLanguage,
@@ -42,20 +62,18 @@ export async function POST(request: NextRequest) {
     plan.userId = userId;
     await savePlan(plan);
 
-    // Complete session
-    await completeAssessmentSession(sessionId, transcript);
-
-    console.log('[v0] Transcript analysis complete for user:', userId);
+    console.log("[v0] Transcript analysis complete for user:", userId);
 
     return NextResponse.json({
       success: true,
       plan,
     });
   } catch (error) {
-    console.error('[v0] Transcript analysis error:', error);
+    console.error("[v0] Transcript analysis error:", error);
     return NextResponse.json(
-      { error: 'Failed to analyze transcript' },
+      { error: "Failed to analyze transcript" },
       { status: 500 }
     );
   }
 }
+

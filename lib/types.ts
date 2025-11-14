@@ -66,12 +66,28 @@ export interface AgoraAgentStartRequest {
     remote_rtc_uids: string[];
     enable_string_uid: boolean;
     idle_timeout: number;
+    advanced_features: {
+      enable_mllm: boolean;
+    };
     mllm: {
-      model: "openai-realtime";
-      model_version: string;
-      enable_turn_detection: boolean;
-      voice: string;
-      system_message: string;
+      url: string;
+      api_key: string;
+      vendor: "openai";
+      style: "openai";
+      input_modalities: Array<"audio" | "text">;
+      output_modalities: Array<"audio" | "text">;
+      max_history: number;
+      greeting_message: string;
+      params: {
+        model: string;
+        voice: string;
+        instructions: string;
+        input_audio_transcription: {
+          language?: string;
+          model: string;
+          prompt?: string;
+        };
+      };
     };
   };
 }

@@ -7,6 +7,7 @@ interface AuthUser {
   name: string;
   nativeLanguage: string;
   targetLanguage: string;
+  hasLearningPlan: boolean;
 }
 
 interface AuthState {
@@ -24,14 +25,24 @@ export const useAuth = create<AuthState>()(
       user: null,
       token: null,
       isAuthenticated: false,
-      setAuth: (user: AuthUser, token: string) =>
-        set({ user, token, isAuthenticated: true }),
-      clearAuth: () =>
-        set({ user: null, token: null, isAuthenticated: false }),
-      setUser: (user: AuthUser) => set({ user }),
+      setAuth: (user: AuthUser, token: string) => {
+        const normalizedUser: AuthUser = {
+          ...user,
+          hasLearningPlan: !!user.hasLearningPlan,
+        };
+        set({ user: normalizedUser, token, isAuthenticated: true });
+      },
+      clearAuth: () => set({ user: null, token: null, isAuthenticated: false }),
+      setUser: (user: AuthUser) =>
+        set({
+          user: {
+            ...user,
+            hasLearningPlan: !!user.hasLearningPlan,
+          },
+        }),
     }),
     {
-      name: 'auth-storage',
+      name: "auth-storage",
       skipHydration: true,
     }
   )

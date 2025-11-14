@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from 'next/navigation';
 import { useAuthHydration } from '@/hooks/use-auth';
 import { ProtectedRoute } from '@/components/protected-route';
@@ -13,6 +13,12 @@ import { Card } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { CALL_DURATION_MS } from '@/lib/constants';
 
+type FeedbackState = {
+  message: string;
+  type: "info" | "success" | "error" | "warning";
+  show: boolean;
+};
+
 export default function AssessmentPage() {
   return (
     <ProtectedRoute>
@@ -23,15 +29,45 @@ export default function AssessmentPage() {
 
 function AssessmentContent() {
   const router = useRouter();
-  const { user, isHydrated } = useAuthHydration();
+  const { user, isHydrated, setUser } = useAuthHydration();
   const [agentId, setAgentId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [hasStoppedAgent, setHasStoppedAgent] = useState(false);
   const [isAssessmentActive, setIsAssessmentActive] = useState(false);
   const [isAgentConnected, setIsAgentConnected] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [feedback, setFeedback] = useState({ message: '', type: 'info' as const, show: false });
+  const [feedback, setFeedback] = useState<FeedbackState>({
+    message: "",
+    type: "info",
+    show: false,
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const agentIdRef = useRef<string | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
+  const hasStoppedAgentRef = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      const latestAgentId = agentIdRef.current;
+      const latestSessionId = sessionIdRef.current;
+      const latestHasStopped = hasStoppedAgentRef.current;
+
+      if (latestAgentId && latestSessionId && !latestHasStopped) {
+        fetch("/api/agora/stop-agent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            agentId: latestAgentId,
+            sessionId: latestSessionId,
+          }),
+        }).catch((error) => {
+          console.error("[v0] Error stopping agent on cleanup:", error);
+        });
+      }
+    };
+  }, []);
 
   if (!isHydrated || !user) {
     return (
@@ -43,29 +79,61 @@ function AssessmentContent() {
 
   const handleAgentReady = (id: string) => {
     setAgentId(id);
+    agentIdRef.current = id;
+    setHasStoppedAgent(false);
+    hasStoppedAgentRef.current = false;
     setIsAgentConnected(true);
     setIsAssessmentActive(true);
     setIsListening(true);
     setFeedback({
-      message: "Great! Sora is ready. Listen to the greeting and respond naturally.",
-      type: 'success',
+      message:
+        "Great! Sora is ready. Listen to the greeting and respond naturally.",
+      type: "success",
       show: true,
     });
 
-    console.log('[v0] Agent ready, assessment started:', id);
+    console.log("[v0] Agent ready, assessment started:", id);
 
     setTimeout(() => {
       setFeedback({ ...feedback, show: false });
     }, 4000);
   };
 
+  const handleSessionReady = (id: string) => {
+    setSessionId(id);
+    sessionIdRef.current = id;
+  };
+
   const handleAgentError = (error: string) => {
     setFeedback({
       message: `Connection error: ${error}`,
-      type: 'error',
+      type: "error",
       show: true,
     });
-    console.error('[v0] Agent error:', error);
+    console.error("[v0] Agent error:", error);
+  };
+
+  const stopAgentIfNeeded = async () => {
+    if (!agentId || !sessionId || hasStoppedAgent) {
+      return;
+    }
+
+    const response = await fetch("/api/agora/stop-agent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        agentId,
+        sessionId,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to stop agent");
+    }
+
+    await response.json();
+    setHasStoppedAgent(true);
+    hasStoppedAgentRef.current = true;
   };
 
   const handleTimeUp = async () => {
@@ -74,54 +142,61 @@ function AssessmentContent() {
     setIsSpeaking(false);
 
     setFeedback({
-      message: 'Time is up! Processing your assessment...',
-      type: 'info',
+      message: "Time is up! Processing your assessment...",
+      type: "info",
       show: true,
     });
 
-    // In a real implementation, get the transcript from Agora
-    const mockTranscript = `User: Hello, I am learning Spanish and I enjoy traveling.
-Agent: Excellent! Tell me about your favorite destination.
-User: I love Barcelona. The architecture is beautiful and the food is delicious.
-Agent: That sounds wonderful! What languages do you speak?
-User: I speak English and some Spanish. I want to improve my fluency.`;
+    if (!agentId || !user || !sessionId) {
+      setFeedback({
+        message: "Unable to finalize assessment. Missing session information.",
+        type: "error",
+        show: true,
+      });
+      return;
+    }
 
     // Submit transcript for analysis
-    if (agentId && user) {
+    if (agentId && user && sessionId) {
       setIsSubmitting(true);
       try {
-        const response = await fetch('/api/analyze-transcript', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        await stopAgentIfNeeded();
+        setIsAgentConnected(false);
+
+        const response = await fetch("/api/analyze-transcript", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             userId: user.userId,
-            transcript: mockTranscript,
             agentId,
-            sessionId: sessionId || 'temp-session',
+            sessionId,
           }),
         });
 
         if (!response.ok) {
-          throw new Error('Failed to analyze transcript');
+          throw new Error("Failed to analyze transcript");
         }
 
         const data = await response.json();
-        console.log('[v0] Analysis complete:', data);
+        console.log("[v0] Analysis complete:", data);
+        if (user) {
+          setUser({ ...user, hasLearningPlan: true });
+        }
 
         setFeedback({
-          message: 'Assessment complete! Redirecting to your results...',
-          type: 'success',
+          message: "Assessment complete! Redirecting to your results...",
+          type: "success",
           show: true,
         });
 
         setTimeout(() => {
-          router.push('/dashboard');
+          router.push("/dashboard");
         }, 2000);
       } catch (error) {
-        console.error('[v0] Analysis error:', error);
+        console.error("[v0] Analysis error:", error);
         setFeedback({
-          message: 'Error processing assessment. Please try again.',
-          type: 'error',
+          message: "Error processing assessment. Please try again.",
+          type: "error",
           show: true,
         });
       } finally {
@@ -131,7 +206,7 @@ User: I speak English and some Spanish. I want to improve my fluency.`;
   };
 
   const handleEndEarly = async () => {
-    if (confirm('Are you sure you want to end the assessment early?')) {
+    if (confirm("Are you sure you want to end the assessment early?")) {
       await handleTimeUp();
     }
   };
@@ -139,15 +214,20 @@ User: I speak English and some Spanish. I want to improve my fluency.`;
   return (
     <AgoraManager
       userId={user.userId}
-      appId={process.env.NEXT_PUBLIC_AGORA_APP_ID || ''}
+      appId={process.env.NEXT_PUBLIC_AGORA_APP_ID || ""}
+      onSessionReady={handleSessionReady}
       onAgentReady={handleAgentReady}
       onAgentError={handleAgentError}
     >
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 p-4">
         <div className="max-w-md mx-auto py-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">Language Assessment</h1>
-            <p className="text-slate-600">Speak naturally with Sora, our AI tutor</p>
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">
+              Language Assessment
+            </h1>
+            <p className="text-slate-600">
+              Speak naturally with Sora, our AI tutor
+            </p>
           </div>
 
           <Card className="p-8 bg-white shadow-xl">
@@ -181,7 +261,9 @@ User: I speak English and some Spanish. I want to improve my fluency.`;
             {/* Instructions */}
             {!isAssessmentActive && !agentId && (
               <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h3 className="font-semibold text-blue-900 mb-2">How it works:</h3>
+                <h3 className="font-semibold text-blue-900 mb-2">
+                  How it works:
+                </h3>
                 <ul className="text-sm text-blue-800 space-y-1">
                   <li>• Sora will greet you and start a conversation</li>
                   <li>• Respond naturally in {user.targetLanguage}</li>
@@ -195,7 +277,7 @@ User: I speak English and some Spanish. I want to improve my fluency.`;
             <div className="mt-8 flex gap-4">
               {!isAssessmentActive && !agentId && (
                 <Button
-                  onClick={() => router.push('/dashboard')}
+                  onClick={() => router.push("/dashboard")}
                   variant="outline"
                   className="flex-1"
                 >
@@ -217,7 +299,9 @@ User: I speak English and some Spanish. I want to improve my fluency.`;
               {isSubmitting && (
                 <div className="flex-1 flex items-center justify-center gap-2 p-2 bg-blue-50 rounded-lg">
                   <Spinner className="w-4 h-4" />
-                  <span className="text-sm font-medium text-blue-700">Processing...</span>
+                  <span className="text-sm font-medium text-blue-700">
+                    Processing...
+                  </span>
                 </div>
               )}
             </div>
@@ -225,7 +309,9 @@ User: I speak English and some Spanish. I want to improve my fluency.`;
 
           {/* Tips Section */}
           <div className="mt-8 p-4 bg-white rounded-lg shadow text-sm text-slate-600">
-            <p className="font-semibold text-slate-900 mb-2">Assessment Tips:</p>
+            <p className="font-semibold text-slate-900 mb-2">
+              Assessment Tips:
+            </p>
             <ul className="space-y-1 text-xs">
               <li>✓ Speak clearly and at a natural pace</li>
               <li>✓ Use complete sentences when possible</li>
