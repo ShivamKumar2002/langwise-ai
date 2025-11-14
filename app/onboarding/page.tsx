@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Card } from '@/components/ui/card';
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SUPPORTED_LANGUAGES } from "@/lib/constants";
 
 export default function OnboardingPage() {
   return (
@@ -168,14 +169,7 @@ function OnboardingContent() {
                   What's your native language?
                 </h2>
                 <div className="space-y-3">
-                  {[
-                    "English",
-                    "Spanish",
-                    "Mandarin",
-                    "French",
-                    "German",
-                    "Japanese",
-                  ].map((lang) => (
+                  {SUPPORTED_LANGUAGES.map((lang) => (
                     <button
                       key={lang}
                       onClick={() => {
@@ -204,14 +198,7 @@ function OnboardingContent() {
                   What language do you want to learn?
                 </h2>
                 <div className="space-y-3">
-                  {[
-                    "Spanish",
-                    "French",
-                    "German",
-                    "Mandarin",
-                    "Japanese",
-                    "Portuguese",
-                  ].map((lang) => (
+                  {SUPPORTED_LANGUAGES.map((lang) => (
                     <button
                       key={lang}
                       onClick={() => {

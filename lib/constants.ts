@@ -17,6 +17,17 @@ export const ANALYSIS_MODEL = process.env.ANALYSIS_MODEL || "openai/gpt-5-mini";
 // Language settings
 export const LANGUAGE_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
+export const SUPPORTED_LANGUAGES = [
+  "English",
+  "Hindi",
+  "Spanish",
+  "Mandarin",
+  "French",
+  "German",
+  "Japanese",
+  "Portuguese",
+];
+
 export const SKILL_CATEGORIES = [
   "Grammar",
   "Vocabulary",
