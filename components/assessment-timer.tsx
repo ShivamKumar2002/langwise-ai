@@ -48,7 +48,7 @@ export function AssessmentTimer({ durationMs, onTimeUp, isRunning }: AssessmentT
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
-            className="text-slate-200"
+            className="text-muted"
           />
           <circle
             cx="60"
@@ -60,22 +60,34 @@ export function AssessmentTimer({ durationMs, onTimeUp, isRunning }: AssessmentT
             strokeDasharray={`${progress * 3.45} 345`}
             strokeLinecap="round"
             className={`transition-all ${
-              isLowTime ? 'text-red-500' : 'text-blue-600'
+              isLowTime
+                ? "text-red-500 dark:text-red-400"
+                : "text-primary dark:text-blue-400"
             }`}
-            style={{ transform: 'rotate(-90deg)', transformOrigin: '60px 60px' }}
+            style={{
+              transform: "rotate(-90deg)",
+              transformOrigin: "60px 60px",
+            }}
           />
         </svg>
         <div className="text-center z-10">
-          <div className={`text-4xl font-bold ${isLowTime ? 'text-red-600' : 'text-slate-900'}`}>
-            {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+          <div
+            className={`text-4xl font-bold ${
+              isLowTime ? "text-red-600 dark:text-red-400" : "text-foreground"
+            }`}
+          >
+            {String(minutes).padStart(2, "0")}:
+            {String(seconds).padStart(2, "0")}
           </div>
-          <div className="text-sm text-slate-500">remaining</div>
+          <div className="text-sm text-muted-foreground">remaining</div>
         </div>
       </div>
 
       {isLowTime && (
-        <div className="px-4 py-2 bg-red-50 border border-red-200 rounded-lg animate-pulse">
-          <p className="text-red-700 text-sm font-medium">Time running out!</p>
+        <div className="px-4 py-2 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 rounded-lg animate-pulse">
+          <p className="text-red-700 dark:text-red-300 text-sm font-medium">
+            Time running out!
+          </p>
         </div>
       )}
     </div>

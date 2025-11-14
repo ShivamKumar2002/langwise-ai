@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Card } from '@/components/ui/card';
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function OnboardingPage() {
   return (
@@ -23,13 +24,13 @@ function OnboardingContent() {
   const { user, isHydrated } = useAuthHydration();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
-    nativeLanguage: user?.nativeLanguage || 'English',
-    targetLanguage: user?.targetLanguage || 'Spanish',
-    goal: '',
-    bio: '',
+    nativeLanguage: user?.nativeLanguage || "English",
+    targetLanguage: user?.targetLanguage || "Spanish",
+    goal: "",
+    bio: "",
   });
 
   useEffect(() => {
@@ -116,16 +117,21 @@ function OnboardingContent() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 p-4">
-      <div className="max-w-2xl mx-auto py-12">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            Welcome, {user.name}!
-          </h1>
-          <p className="text-slate-600">Let's set up your learning profile</p>
+    <div className="min-h-screen bg-linear-to-br from-background via-background to-background dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 p-4">
+      <div className="max-w-2xl mx-auto py-10">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-1">
+              Welcome, {user.name}!
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Let&apos;s set up your learning profile
+            </p>
+          </div>
+          <ThemeToggle />
         </div>
 
-        <Card className="p-8 bg-white shadow-lg">
+        <Card className="p-8 shadow-xl bg-card/95 backdrop-blur-sm border-border/60">
           {/* Step Indicator */}
           <div className="mb-8">
             <div className="flex items-center gap-2">
@@ -134,18 +140,18 @@ function OnboardingContent() {
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
                       s === step
-                        ? "bg-blue-600 text-white"
+                        ? "bg-primary text-primary-foreground shadow-sm"
                         : s < step
-                        ? "bg-green-500 text-white"
-                        : "bg-slate-200 text-slate-600"
+                        ? "bg-emerald-500 text-emerald-50"
+                        : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {s}
                   </div>
                   {s < 4 && (
                     <div
-                      className={`h-1 w-12 mx-1 ${
-                        s < step ? "bg-green-500" : "bg-slate-200"
+                      className={`h-1 w-12 mx-1 rounded-full ${
+                        s < step ? "bg-emerald-500" : "bg-muted"
                       }`}
                     />
                   )}
@@ -158,7 +164,7 @@ function OnboardingContent() {
           {step === 1 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-4">
+                <h2 className="text-2xl font-bold text-foreground mb-4">
                   What's your native language?
                 </h2>
                 <div className="space-y-3">
@@ -178,8 +184,8 @@ function OnboardingContent() {
                       }}
                       className={`w-full p-4 text-left border-2 rounded-lg font-medium transition ${
                         formData.nativeLanguage === lang
-                          ? "border-blue-600 bg-blue-50 text-blue-900"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                          ? "border-primary bg-primary/5 text-primary-foreground/90 dark:bg-primary/15"
+                          : "border-border bg-card text-foreground hover:border-primary/40"
                       }`}
                     >
                       {lang}
@@ -194,7 +200,7 @@ function OnboardingContent() {
           {step === 2 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-4">
+                <h2 className="text-2xl font-bold text-foreground mb-4">
                   What language do you want to learn?
                 </h2>
                 <div className="space-y-3">
@@ -214,8 +220,8 @@ function OnboardingContent() {
                       }}
                       className={`w-full p-4 text-left border-2 rounded-lg font-medium transition ${
                         formData.targetLanguage === lang
-                          ? "border-blue-600 bg-blue-50 text-blue-900"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                          ? "border-primary bg-primary/5 text-primary-foreground/90 dark:bg-primary/15"
+                          : "border-border bg-card text-foreground hover:border-primary/40"
                       }`}
                     >
                       {lang}
@@ -230,7 +236,7 @@ function OnboardingContent() {
           {step === 3 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-4">
+                <h2 className="text-2xl font-bold text-foreground mb-4">
                   What's your learning goal?
                 </h2>
                 <textarea
@@ -240,7 +246,7 @@ function OnboardingContent() {
                     setError("");
                   }}
                   placeholder="e.g., Achieve conversational fluency for travel and business"
-                  className="w-full p-4 border-2 border-slate-200 rounded-lg focus:border-blue-600 focus:outline-none resize-none"
+                  className="w-full p-4 border-2 border-border rounded-lg bg-background/60 focus:border-primary focus:outline-none resize-none"
                   rows={4}
                 />
               </div>
@@ -251,7 +257,7 @@ function OnboardingContent() {
           {step === 4 && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-4">
+                <h2 className="text-2xl font-bold text-foreground mb-4">
                   Tell us about yourself
                 </h2>
                 <textarea
@@ -261,7 +267,7 @@ function OnboardingContent() {
                     setError("");
                   }}
                   placeholder="Share your background, profession, or interests..."
-                  className="w-full p-4 border-2 border-slate-200 rounded-lg focus:border-blue-600 focus:outline-none resize-none"
+                  className="w-full p-4 border-2 border-border rounded-lg bg-background/60 focus:border-primary focus:outline-none resize-none"
                   rows={4}
                 />
               </div>
@@ -270,8 +276,8 @@ function OnboardingContent() {
 
           {/* Error Message */}
           {error && (
-            <div className="mt-6 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 text-sm">{error}</p>
+            <div className="mt-6 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+              <p className="text-destructive text-sm">{error}</p>
             </div>
           )}
 
@@ -286,17 +292,14 @@ function OnboardingContent() {
               Back
             </Button>
             {step < 4 ? (
-              <Button
-                onClick={handleNext}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-              >
+              <Button onClick={handleNext} className="flex-1">
                 Next
               </Button>
             ) : (
               <Button
                 onClick={handleSubmit}
                 disabled={isLoading}
-                className="flex-1 bg-green-600 hover:bg-green-700"
+                className="flex-1"
               >
                 {isLoading ? (
                   <div className="flex items-center gap-2">

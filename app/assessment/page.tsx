@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { CALL_DURATION_MS } from '@/lib/constants';
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type FeedbackState = {
   message: string;
@@ -219,18 +220,21 @@ function AssessmentContent() {
       onAgentReady={handleAgentReady}
       onAgentError={handleAgentError}
     >
-      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="min-h-screen bg-linear-to-br from-background via-background to-background dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 p-4">
         <div className="max-w-md mx-auto py-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">
-              Language Assessment
-            </h1>
-            <p className="text-slate-600">
-              Speak naturally with Sora, our AI tutor
-            </p>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-1">
+                Language Assessment
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Speak naturally with Sora, our AI tutor
+              </p>
+            </div>
+            <ThemeToggle />
           </div>
 
-          <Card className="p-8 bg-white shadow-xl">
+          <Card className="p-8 bg-card/95 shadow-xl backdrop-blur-sm border-border/60">
             {/* Agent Status */}
             <div className="mb-8 pb-8 border-b border-slate-200">
               <AgentStatus
@@ -260,11 +264,11 @@ function AssessmentContent() {
 
             {/* Instructions */}
             {!isAssessmentActive && !agentId && (
-              <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h3 className="font-semibold text-blue-900 mb-2">
+              <div className="mt-8 p-4 rounded-lg border border-primary/15 bg-primary/5 dark:bg-primary/10">
+                <h3 className="font-semibold text-primary mb-2">
                   How it works:
                 </h3>
-                <ul className="text-sm text-blue-800 space-y-1">
+                <ul className="text-sm text-foreground/80 space-y-1">
                   <li>• Sora will greet you and start a conversation</li>
                   <li>• Respond naturally in {user.targetLanguage}</li>
                   <li>• You have 3 minutes to demonstrate your skills</li>
@@ -297,25 +301,23 @@ function AssessmentContent() {
               )}
 
               {isSubmitting && (
-                <div className="flex-1 flex items-center justify-center gap-2 p-2 bg-blue-50 rounded-lg">
+                <div className="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg bg-primary/5 text-primary">
                   <Spinner className="w-4 h-4" />
-                  <span className="text-sm font-medium text-blue-700">
-                    Processing...
-                  </span>
+                  <span className="text-sm font-medium">Processing...</span>
                 </div>
               )}
             </div>
           </Card>
 
           {/* Tips Section */}
-          <div className="mt-8 p-4 bg-white rounded-lg shadow text-sm text-slate-600">
-            <p className="font-semibold text-slate-900 mb-2">
+          <div className="mt-8 p-4 bg-card/90 rounded-lg shadow text-sm text-muted-foreground border border-border/60">
+            <p className="font-semibold text-foreground mb-2">
               Assessment Tips:
             </p>
             <ul className="space-y-1 text-xs">
               <li>✓ Speak clearly and at a natural pace</li>
               <li>✓ Use complete sentences when possible</li>
-              <li>✓ Don't worry about perfect grammar</li>
+              <li>✓ Don&apos;t worry about perfect grammar</li>
               <li>✓ Ask for clarification if needed</li>
               <li>✓ Relax and enjoy the conversation</li>
             </ul>

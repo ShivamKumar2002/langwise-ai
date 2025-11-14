@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,16 +80,26 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">LangWiseAI</h1>
-          <p className="text-slate-600">Voice-Powered Language Assessment</p>
+    <div className="min-h-screen bg-linear-to-br from-background via-background to-background dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 flex items-center justify-center p-4">
+      <div className="absolute inset-x-0 top-0 pointer-events-none opacity-60 dark:opacity-40">
+        <div className="mx-auto max-w-4xl h-40 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.18),transparent_60%)] dark:bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.28),transparent_60%)]" />
+      </div>
+      <div className="w-full max-w-md relative">
+        <div className="flex items-center justify-between mb-8">
+          <div className="text-left">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+              LangWiseAI
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Voice-powered language assessment
+            </p>
+          </div>
+          <ThemeToggle />
         </div>
 
-        <Card className="p-8 bg-white shadow-lg">
+        <Card className="p-8 shadow-xl border-border/60 bg-card/95 backdrop-blur-sm">
           <div className="mb-6">
-            <div className="flex gap-2 border-b border-slate-200">
+            <div className="flex gap-2 border-b border-border">
               <button
                 type="button"
                 onClick={() => {
@@ -97,8 +108,8 @@ export default function LoginPage() {
                 }}
                 className={`flex-1 py-2 px-4 font-medium transition ${
                   !isSignUp
-                    ? "text-blue-600 border-b-2 border-blue-600"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "text-primary border-b-2 border-primary"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Sign In
@@ -111,8 +122,8 @@ export default function LoginPage() {
                 }}
                 className={`flex-1 py-2 px-4 font-medium transition ${
                   isSignUp
-                    ? "text-blue-600 border-b-2 border-blue-600"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "text-primary border-b-2 border-primary"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Sign Up
@@ -123,7 +134,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {isSignUp && (
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Name
                 </label>
                 <Input
@@ -138,7 +149,7 @@ export default function LoginPage() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Email
               </label>
               <Input
@@ -153,7 +164,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Password
               </label>
               <Input
@@ -169,15 +180,15 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-700 text-sm">{error}</p>
+              <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded-lg text-sm">
+                <p>{error}</p>
               </div>
             )}
 
             <Button
               type="submit"
               disabled={isLoading || !email || !password || (isSignUp && !name)}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2"
+              className="w-full font-medium py-2"
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
