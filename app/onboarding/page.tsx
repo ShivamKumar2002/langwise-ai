@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthHydration } from '@/hooks/use-auth';
-import { saveOnboarding } from '@/lib/auth-actions';
-import { ProtectedRoute } from '@/components/protected-route';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Spinner } from '@/components/ui/spinner';
-import { Card } from '@/components/ui/card';
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuthHydration } from "@/hooks/use-auth";
+import { saveOnboarding, getUserInfo } from "@/lib/auth-actions";
+import { ProtectedRoute } from "@/components/protected-route";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
+import { Card } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SUPPORTED_LANGUAGES } from "@/lib/constants";
 
@@ -22,6 +22,9 @@ export default function OnboardingPage() {
 
 function OnboardingContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const mode = searchParams.get("mode");
+  const isEditMode = mode === "edit";
   const { user, isHydrated } = useAuthHydration();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,23 +38,41 @@ function OnboardingContent() {
   });
 
   useEffect(() => {
-    if (isHydrated && user) {
-      setFormData((prev) => ({
-        ...prev,
-        nativeLanguage: user.nativeLanguage,
-        targetLanguage: user.targetLanguage,
-      }));
+    if (!isHydrated || !user) {
+      return;
     }
+
+    const hydrateFromProfile = async () => {
+      try {
+        const profile = await getUserInfo(user.userId);
+        setFormData((prev) => ({
+          ...prev,
+          nativeLanguage: profile.nativeLanguage,
+          targetLanguage: profile.targetLanguage,
+          goal: profile.goal || "",
+          bio: profile.bio || "",
+        }));
+      } catch (err) {
+        console.error("[v0] Failed to load user profile for onboarding:", err);
+        setFormData((prev) => ({
+          ...prev,
+          nativeLanguage: user.nativeLanguage,
+          targetLanguage: user.targetLanguage,
+        }));
+      }
+    };
+
+    hydrateFromProfile();
   }, [isHydrated, user]);
 
   useEffect(() => {
-    if (isHydrated && user?.hasLearningPlan) {
+    if (isHydrated && user?.hasLearningPlan && !isEditMode) {
       console.log(
         "[v0] User already has a learning plan, redirecting to dashboard"
       );
       router.replace("/dashboard");
     }
-  }, [isHydrated, user, router]);
+  }, [isHydrated, user, router, isEditMode]);
 
   if (!isHydrated) {
     return (
@@ -61,7 +82,11 @@ function OnboardingContent() {
     );
   }
 
-  if (!user || user.hasLearningPlan) {
+  if (!user) {
+    return null;
+  }
+
+  if (user.hasLearningPlan && !isEditMode) {
     return null;
   }
 
@@ -126,7 +151,9 @@ function OnboardingContent() {
               Welcome, {user.name}!
             </h1>
             <p className="text-sm text-muted-foreground">
-              Let&apos;s set up your learning profile
+              {isEditMode
+                ? "Update your learning preferences anytime"
+                : "Let&apos;s set up your learning profile"}
             </p>
           </div>
           <ThemeToggle />
@@ -169,22 +196,25 @@ function OnboardingContent() {
                   What's your native language?
                 </h2>
                 <div className="space-y-3">
-                  {SUPPORTED_LANGUAGES.map((lang) => (
-                    <button
-                      key={lang}
-                      onClick={() => {
-                        setFormData({ ...formData, nativeLanguage: lang });
-                        setError("");
-                      }}
-                      className={`w-full p-4 text-left border-2 rounded-lg font-medium transition ${
-                        formData.nativeLanguage === lang
-                          ? "border-primary bg-primary/5 text-primary-foreground/90 dark:bg-primary/15"
-                          : "border-border bg-card text-foreground hover:border-primary/40"
-                      }`}
-                    >
-                      {lang}
-                    </button>
-                  ))}
+                  {SUPPORTED_LANGUAGES.map((lang) => {
+                    const isSelected = formData.nativeLanguage === lang;
+                    return (
+                      <button
+                        key={lang}
+                        onClick={() => {
+                          setFormData({ ...formData, nativeLanguage: lang });
+                          setError("");
+                        }}
+                        className={`w-full p-4 text-left border-2 rounded-lg font-medium transition ${
+                          isSelected
+                            ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                            : "border-border bg-card text-foreground hover:border-primary/60 hover:bg-muted/60"
+                        }`}
+                      >
+                        {lang}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -198,22 +228,25 @@ function OnboardingContent() {
                   What language do you want to learn?
                 </h2>
                 <div className="space-y-3">
-                  {SUPPORTED_LANGUAGES.map((lang) => (
-                    <button
-                      key={lang}
-                      onClick={() => {
-                        setFormData({ ...formData, targetLanguage: lang });
-                        setError("");
-                      }}
-                      className={`w-full p-4 text-left border-2 rounded-lg font-medium transition ${
-                        formData.targetLanguage === lang
-                          ? "border-primary bg-primary/5 text-primary-foreground/90 dark:bg-primary/15"
-                          : "border-border bg-card text-foreground hover:border-primary/40"
-                      }`}
-                    >
-                      {lang}
-                    </button>
-                  ))}
+                  {SUPPORTED_LANGUAGES.map((lang) => {
+                    const isSelected = formData.targetLanguage === lang;
+                    return (
+                      <button
+                        key={lang}
+                        onClick={() => {
+                          setFormData({ ...formData, targetLanguage: lang });
+                          setError("");
+                        }}
+                        className={`w-full p-4 text-left border-2 rounded-lg font-medium transition ${
+                          isSelected
+                            ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                            : "border-border bg-card text-foreground hover:border-primary/60 hover:bg-muted/60"
+                        }`}
+                      >
+                        {lang}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>

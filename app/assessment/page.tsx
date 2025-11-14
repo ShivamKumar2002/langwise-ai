@@ -143,7 +143,8 @@ function AssessmentContent() {
     setIsSpeaking(false);
 
     setFeedback({
-      message: "Time is up! Processing your assessment...",
+      message:
+        "Time is up! Processing your assessment. This may take upto 2-3 minutes. Please wait...",
       type: "info",
       show: true,
     });

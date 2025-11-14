@@ -92,6 +92,14 @@ function DashboardContent() {
             <Button
               variant="outline"
               onClick={() => {
+                window.location.href = "/onboarding?mode=edit";
+              }}
+            >
+              Edit Learning Profile
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
                 localStorage.clear();
                 window.location.href = "/";
               }}
@@ -170,10 +178,7 @@ function DashboardContent() {
               >
                 Back to Home
               </Button>
-              <Button
-                onClick={() => (window.location.href = "/assessment")}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
+              <Button onClick={() => (window.location.href = "/assessment")}>
                 Take Another Assessment
               </Button>
             </section>
