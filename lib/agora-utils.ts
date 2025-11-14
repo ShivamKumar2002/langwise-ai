@@ -116,3 +116,36 @@ Assessment focus areas:
 
 Keep the conversation natural and engaging. Start with an introduction and gradually increase complexity. End by summarizing key observations.`;
 }
+
+// Configure webhook for agent
+export async function configureAgentWebhook(
+  agentId: string,
+  webhookUrl: string
+): Promise<void> {
+  const url = `https://api.agora.io/api/conversational-ai-agent/v2/projects/${AGORA_CONFIG.appId}/agents/${agentId}/webhook`;
+  const authHeader = generateAgoraAuthHeader();
+
+  const requestBody = {
+    webhook_url: webhookUrl,
+    event_types: ['agent_text_message', 'agent_disconnect'],
+  };
+
+  console.log('[v0] Configuring webhook for agent:', agentId);
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': authHeader,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    console.error('[v0] Webhook configuration error:', error);
+    throw new Error(`Failed to configure webhook: ${error}`);
+  }
+
+  console.log('[v0] Webhook configured successfully for agent:', agentId);
+}

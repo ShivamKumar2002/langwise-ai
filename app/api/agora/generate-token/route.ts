@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { RtcTokenBuilder, RtcRole } from 'agora-access-token';
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,17 +12,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Mock token generation for demo
-    // In production, use agora-access-token to generate real tokens
-    const mockToken = `demo_token_${channel}_${uid}_${Date.now()}`;
+    const appId = process.env.AGORA_APP_ID;
+    const appCertificate = process.env.AGORA_APP_CERTIFICATE;
+    const uidValue = uid || 0;
+    const expirationTimeInSeconds = 24 * 60 * 60; // 24 hours
 
-    console.log('[v0] Generated Agora token for channel:', channel);
+    if (!appId || !appCertificate) {
+      console.error('[v0] Missing Agora credentials for token generation');
+      return NextResponse.json(
+        { error: 'Agora credentials not configured' },
+        { status: 500 }
+      );
+    }
+
+    // Generate RTC token for the user
+    const token = RtcTokenBuilder.buildTokenWithUid(
+      appId,
+      appCertificate,
+      channel,
+      uidValue,
+      RtcRole.PUBLISHER,
+      expirationTimeInSeconds
+    );
+
+    console.log('[v0] Generated real Agora RTC token for channel:', channel, 'uid:', uidValue);
 
     return NextResponse.json({
       success: true,
-      token: mockToken,
+      token,
       channel,
-      uid: uid || 0,
+      uid: uidValue,
     });
   } catch (error) {
     console.error('[v0] Token generation error:', error);

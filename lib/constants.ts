@@ -39,3 +39,37 @@ export const SKILL_CATEGORIES = [
 // Call configuration
 export const CALL_DURATION_MS = 3 * 60 * 1000; // 3 minutes
 export const AGENT_IDLE_TIMEOUT = 120; // 120 seconds
+
+export function validateAgoraConfig(): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  if (!AGORA_CONFIG.appId) {
+    errors.push('AGORA_APP_ID is not configured');
+  }
+  if (!AGORA_CONFIG.customerId) {
+    errors.push('AGORA_CUSTOMER_ID is not configured');
+  }
+  if (!AGORA_CONFIG.customerSecret) {
+    errors.push('AGORA_CUSTOMER_SECRET is not configured');
+  }
+  if (!process.env.AGORA_APP_CERTIFICATE) {
+    errors.push('AGORA_APP_CERTIFICATE is not configured');
+  }
+  if (!GEMINI_CONFIG.apiKey) {
+    errors.push('GEMINI_API_KEY is not configured');
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+}
+
+// Call this during app initialization
+if (typeof window === 'undefined') {
+  // Server-side only
+  const validation = validateAgoraConfig();
+  if (!validation.valid) {
+    console.warn('[v0] Configuration warnings:', validation.errors);
+  }
+}
