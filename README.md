@@ -1,20 +1,29 @@
-## LangWiseAI – AI Voice Language Assessment
+# LangWiseAI – AI Voice Language Assessment
 
 LangWiseAI is an AI‑powered **spoken language coach** that runs a short voice conversation with each learner and turns it into a **personalized learning plan and progress dashboard**.  
 Under the hood it uses **Next.js**, **Supabase**, **Agora Conversational AI**, and **OpenAI Realtime**, deployed on **Vercel** with the **Vercel × Supabase integration**.
 
+<div align="center">
+  <img src="docs/media/4_dashboard_dark.png" alt="Dashboard - Dark Theme" width="48%" />
+  <img src="docs/media/4_dashboard_light.png" alt="Dashboard - Light Theme" width="48%" />
+</div>
+
 ---
 
-### Highlights
+## Highlights
 
-- **Real conversation, not multiple‑choice**: Learners speak with “Sora”, an AI tutor, in their target language over low‑latency voice.
+- **Real conversation, not multiple‑choice**: Learners speak with "Sora", an AI tutor, in their target language over low‑latency voice.
 - **Automatic skill scoring**: Grammar, Vocabulary, Fluency, Pronunciation, Listening, and Confidence are evaluated from real conversation.
 - **Personalized learning plan**: The app generates structured learning units with difficulty levels, time estimates, and coaching tips.
 - **Progress dashboard**: A clean dashboard shows strengths, weak areas, current CEFR‑style level, and a clear next step.
 
+## 📸 [View All Screenshots](docs/screenshots.md)
+
+See the complete user interface across all flows in both dark and light themes.
+
 ---
 
-### User journey
+## User journey
 
 1. **Sign up and onboarding**
    - Sign up with email (Supabase Auth).
@@ -40,7 +49,7 @@ Under the hood it uses **Next.js**, **Supabase**, **Agora Conversational AI**, a
 
 ---
 
-### Architecture overview
+## Architecture overview
 
 - **Frontend (`app`, `components`)**
   - Built with **Next.js App Router** and **React**.
@@ -87,7 +96,7 @@ Under the hood it uses **Next.js**, **Supabase**, **Agora Conversational AI**, a
 
 ---
 
-### Key concepts
+## Key concepts
 
 - **Assessment session**
   - Represents a single 3‑minute call with Sora.
@@ -107,7 +116,7 @@ Under the hood it uses **Next.js**, **Supabase**, **Agora Conversational AI**, a
 
 ---
 
-### Project structure
+## Project structure
 
 - **`app/`**: Next.js routes and pages (`/`, `/onboarding`, `/assessment`, `/dashboard`, API routes under `/api`).
 - **`components/`**: UI components including:
@@ -126,10 +135,11 @@ Under the hood it uses **Next.js**, **Supabase**, **Agora Conversational AI**, a
   - `quick-start.md`: Full setup and run guide.
   - `supabase-setup.md`: Database and auth details.
   - `agora-setup.md`: Agora and OpenAI Realtime configuration.
+  - `screenshots.md`: UI screenshots across all flows (dark and light themes).
 
 ---
 
-### Getting started
+## Getting started
 
 For full, step‑by‑step instructions (Vercel setup, Supabase integration, Agora/OpenAI env vars), see:
 
