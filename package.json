@@ -54,7 +54,7 @@
     "immer": "latest",
     "input-otp": "1.4.2",
     "lucide-react": "^0.553.0",
-    "next": "16.0.3",
+    "next": "16.0.7",
     "next-themes": "latest",
     "path": "latest",
     "react": "19.2.0",
